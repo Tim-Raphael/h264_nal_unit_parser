@@ -1,75 +1,64 @@
-use std::{fs::File, io::Read};
+use futures::{SinkExt, StreamExt};
+use tokio::sync::mpsc;
+use warp::ws::Message;
+use warp::Filter;
 
-#[allow(dead_code)]
-#[derive(Debug)]
-enum NalUnit {
-    Slice(Vec<u8>), // video data (I-frame, P-frame, B-frame slice)
-    Sps(Vec<u8>),   // sequence parameter set
-    Pps(Vec<u8>),   // picture parameter set
-    Other(u8, Vec<u8>),
+mod nal_unit_parser;
+
+#[tokio::main]
+async fn main() {
+    let web_route = warp::fs::dir("static/www");
+    let ws_route = warp::path("ws")
+        .and(warp::ws())
+        .map(|ws: warp::ws::Ws| ws.on_upgrade(handle_connection));
+
+    let routes = web_route.or(ws_route);
+
+    // Start the server
+    warp::serve(routes).run(([127, 0, 0, 1], 8080)).await;
 }
 
-fn parse_nal_units(buf: &[u8]) -> Vec<NalUnit> {
-    let mut nal_units = Vec::new();
-    let mut padding_bytes = 0;
-    let mut start_index: Option<usize> = None;
+async fn handle_connection(ws: warp::ws::WebSocket) {
+    // Split web sockets into a transmitter (write) and a receiver (read), which allows us to handle
+    // writing and reading independently. This is achieved by the split method provided by the
+    // Stream and Sink traits via the futures crate.
+    let (mut ws_tx, mut ws_rx) = ws.split();
+    let (tx, mut rx) = mpsc::channel::<String>(32);
 
-    for i in 0..buf.len() {
-        if buf[i] == 0x00 {
-            padding_bytes += 1;
-            continue;
-        } else if buf[i] != 0x01 {
-            padding_bytes = 0;
-            continue;
-        } else if padding_bytes < 2 {
-            continue;
-        }
+    let mut nal_unit_count = nal_unit_parser::NalUnitCount::new();
 
-        if let Some(start) = start_index {
-            let header = &buf[start];
-
-            // a value of 1 indicates that the unit may contain bit errors
-            // or other syntax violations
-            let forbidden_zero_bit = (header & 0x80) >> 7;
-
-            if forbidden_zero_bit == 1 {
-                continue;
+    // This spawns a task which allows us to send proccessed messages to the WebSocket.
+    tokio::task::spawn(async move {
+        // while let Some(unit) = parser.next().await {
+        //      nal_unit_count.update(unit);
+        //      if ws_tx.send(Message::text(msg)).await.is_err() {
+        //          break;
+        //      }
+        // }
+        while let Some(msg) = rx.recv().await {
+            if ws_tx.send(Message::text(msg)).await.is_err() {
+                break;
             }
-
-            // a value of 00 indicates that the nal unit is not used
-            // to reconstructed a image frame
-            let nal_ref_idc = (header & 0x60) >> 5;
-
-            let nal_unit_type = header & 0x1F;
-
-            let nal_unit = match nal_unit_type {
-                1..=5 => NalUnit::Slice(buf[(start + 1)..(i - padding_bytes)].to_vec()),
-                7 => NalUnit::Sps(buf[(start + 1)..(i - padding_bytes)].to_vec()),
-                8 => NalUnit::Pps(buf[(start + 1)..(i - padding_bytes)].to_vec()),
-                _ => NalUnit::Other(
-                    nal_unit_type,
-                    buf[(start + 1)..(i - padding_bytes)].to_vec(),
-                ),
-            };
-
-            nal_units.push(nal_unit);
         }
+    });
 
-        start_index = Some(i + 1);
-        padding_bytes = 0;
+    while let Some(Ok(msg)) = ws_rx.next().await {
+        // let mut parser = parser.lock();
+        // parser.write_all(msg.as_bytes());
+        process_bytes(msg.as_bytes(), &mut nal_unit_count, &tx).await
     }
-
-    nal_units
 }
 
-fn main() -> std::io::Result<()> {
-    let mut f = File::open("./output.h264")?;
-    let mut buf = Vec::new();
-    let _ = f.read_to_end(&mut buf);
+async fn process_bytes(
+    bytes: &[u8],
+    nal_unit_count: &mut nal_unit_parser::NalUnitCount,
+    tx: &mpsc::Sender<String>,
+) {
+    for nal_unit in nal_unit_parser::parse(bytes) {
+        nal_unit_count.update(&nal_unit);
 
-    let nal_units = parse_nal_units(&buf);
-
-    dbg!(nal_units);
-
-    Ok(())
+        if (tx.send(nal_unit_count.format()).await).is_err() {
+            break;
+        }
+    }
 }
