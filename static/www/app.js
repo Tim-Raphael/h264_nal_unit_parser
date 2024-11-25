@@ -22,14 +22,13 @@ class NalUnitTable {
     update(nalUnit) {
         if (this.nalUnits[`${nalUnit} `]) this.nalUnits[`${nalUnit} `] += 1;
         else this.nalUnits[`${nalUnit} `] = 1;
-        console.log(this.nalUnits);
         this.render();
     }
 }
 
 const video = document.getElementById("webcam");
 const table = new NalUnitTable(document.getElementById("nal-unit-table"));
-const ws = new WebSocket("ws://127.0.0.1:8080/ws");
+const ws = new WebSocket("ws://127.0.0.1:8080/parser");
 
 navigator.mediaDevices.getUserMedia({
     video: {
@@ -54,5 +53,4 @@ navigator.mediaDevices.getUserMedia({
 ws.onmessage = (event) => {
     table.update(event.data)
 };
-
 

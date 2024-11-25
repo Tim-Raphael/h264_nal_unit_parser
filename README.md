@@ -1,5 +1,5 @@
-# h264 nal unit parser 
-A quick exercise on parsing nal units.
+# h264_nal_unit_parser 
+A (not so) quick exercise on parsing NAL-Units.
 
 ## Reference
 - [RFC - RTP Payload Format for H.264 Video](https://www.rfc-editor.org/rfc/rfc6184#section-1.3)

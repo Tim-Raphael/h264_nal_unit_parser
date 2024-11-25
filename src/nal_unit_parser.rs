@@ -28,7 +28,7 @@ impl fmt::Display for NalUnit {
 pub struct NalUnitParser {
     zero_byte_count: usize,
     byte_buf: Vec<u8>,
-    nal_units: Vec<NalUnit>,
+    pub nal_units: Vec<NalUnit>,
 }
 
 // impl Stream for NalUnitParser {
@@ -69,11 +69,10 @@ impl NalUnitParser {
     fn parse(bytes: &[u8]) -> eyre::Result<NalUnit> {
         let header = &bytes[0];
 
-        // a value of 1 indicates that the unit may contain bit errors or other syntax
-        // violations
+        // A value of 1 indicates that the unit may contain bit errors or other syntax violations.
         let forbidden_zero_bit = (header & 0x80) >> 7;
 
-        // a value of 00 indicates that the nal unit is not used to reconstructed a image frame
+        // A value of 00 indicates that the NalUnit is not used to reconstruct an image frame.
         let nal_ref_idc = (header & 0x60) >> 5;
         let nal_unit_type = header & 0x1F;
 

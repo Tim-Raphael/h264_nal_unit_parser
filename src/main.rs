@@ -9,7 +9,7 @@ mod nal_unit_parser;
 #[tokio::main]
 async fn main() {
     let web_route = warp::fs::dir("static/www");
-    let ws_route = warp::path("ws")
+    let ws_route = warp::path("parser")
         .and(warp::ws())
         .map(|ws: warp::ws::Ws| ws.on_upgrade(handle_connection));
 
@@ -38,7 +38,7 @@ async fn handle_connection(ws: warp::ws::WebSocket) {
 
     while let Some(Ok(msg)) = ws_rx.next().await {
         let _ = parser.write(msg.as_bytes());
-        for nal_unit in nal_units {
+        for nal_unit in parser.nal_units.drain(..) {
             (tx.send(nal_unit.to_string()).await).unwrap_or_else(|e| eprintln!("Error: {}", e));
         }
     }
