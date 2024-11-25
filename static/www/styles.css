@@ -1,0 +1,402 @@
+/* EARLY PROTOTYPE OF A CLASSLESS CSS FRAMEWORK I'M WORKING ON */
+
+/* reset */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    /*  color components */
+    --primary-h: 200;
+    --primary-s: 85%;
+    --primary-l: 55%;
+    --primary-hsl: var(--primary-h), var(--primary-s), var(--primary-l);
+    --primary: hsl(var(--primary-hsl));
+    --primary-light: hsl(var(--primary-h), var(--primary-s), calc(var(--primary-l) / 0.75));
+    --primary-dark: hsl(var(--primary-h), var(--primary-s), calc(var(--primary-l) * 0.5));
+    --primary-darker: hsl(var(--primary-h), var(--primary-s), calc(var(--primary-l) * 0.25));
+
+    --secondary-h: 235;
+    --secondary-s: 65%;
+    --secondary-l: 35%;
+    --secondary-hsl: var(--secondary-h), var(--secondary-s), var(--secondary-l);
+    --secondary: hsl(var(--secondary-hsl));
+    --secondary-light: hsl(var(--secondary-h), var(--secondary-s), calc(var(--secondary-l) / 0.75));
+    --secondary-dark: hsl(var(--secondary-h), var(--secondary-s), calc(var(--secondary-l) * 0.5));
+    --secondary-darker: hsl(var(--secondary-h), var(--secondary-s), calc(var(--secondary-l) * 0.25));
+
+    --medium-h: 0;
+    --medium-s: 0%;
+    --medium-l: 90%;
+    --medium-hsl: var(--medium-h),
+        var(--medium-s),
+        var(--medium-l);
+    --medium: hsl(var(--medium-hsl));
+
+    --background-h: 0;
+    --background-s: 0%;
+    --background-l: 100%;
+    --background-hsl: var(--background-h),
+        var(--background-s),
+        var(--background-l);
+    --background: hsl(var(--background-hsl));
+
+    --text-h: 0;
+    --text-s: 0%;
+    --text-l: 20%;
+    --text-hsl: var(--text-h),
+        var(--text-s),
+        var(--text-l);
+    --text: hsl(var(--text-hsl));
+
+    /* breakpoints */
+    /* these don't work there just you can easily find and replace */
+    --bp-medium: 768px;
+    --bp-large: 1024px;
+
+    /* max-width */
+    --max-width: 1440px;
+
+    /* nav */
+    --nav-height: 75px;
+
+    @media only screen and (min-width: 1024px) {
+        --nav-height: 100px;
+    }
+
+    /* spaces */
+    --space-small: 10px;
+    --space-medium: 25px;
+    --space-large: 35px;
+
+    @media only screen and (min-width: 768px) {
+        --space-small: 25px;
+        --space-medium: 50px;
+        --space-large: 75px
+    }
+
+    @media only screen and (min-width: 1024px) {
+        --space-small: 50px;
+        --space-medium: 100px;
+        --space-large: 150px;
+    }
+
+    /* gaps */
+    --gap-small: 8px;
+    --gap-medium: 16px;
+    --gap-large: 32px;
+
+    /* font-sizes */
+    --base-font-size: 16px;
+    --font-size-small: 0.875rem;
+    --font-size-medium: 1rem;
+    --font-size-large: 1.25rem;
+
+    --font-size-h1: 1.45rem;
+    --font-size-h2: 1.38rem;
+    --font-size-h3: 1.32rem;
+    --font-size-h4: 1.27rem;
+    --font-size-h5: 1.24rem;
+    --font-size-h6: 1.22rem;
+
+    @media only screen and (min-width: 768px) {
+        --font-size-h1: 4rem;
+        --font-size-h2: 3.3rem;
+        --font-size-h3: 2.7rem;
+        --font-size-h4: 2.25rem;
+        --font-size-h5: 1.95rem;
+        --font-size-h6: 1.7rem;
+    }
+
+    @media only screen and (min-width: 1024px) {
+        --font-size-h1: 4.5rem;
+        --font-size-h2: 3.8rem;
+        --font-size-h3: 3.2rem;
+        --font-size-h4: 2.75rem;
+        --font-size-h5: 2.45rem;
+        --font-size-h6: 2.2rem;
+    }
+
+    /* border */
+    --border-radius-small: var(--gap-small);
+    --border-radius-medium: var(--gap-medium);
+    --border-radius-large: var(--gap-large);
+
+    /* shadows */
+    --elevation-1: 0 1px var(--gap-small) rgba(0, 0, 0, 0.1);
+    --elevation-2: 0 3px var(--gap-medium) rgba(0, 0, 0, 0.2);
+    --elevation-3: 0 9px var(--gap-large) rgba(0, 0, 0, 0.3);
+
+    /* transition */
+    --transition-slow: 500ms ease;
+    --transition-medium: 300ms ease;
+    --transition-fast: 100ms ease;
+}
+
+html {
+    overflow-x: hidden;
+}
+
+/* body */
+body {
+    font-family: sans-serif;
+    line-height: 1.5em;
+    font-size: var(--base-font-size);
+    font-weight: 200;
+    background-color: var(--background-color);
+    color: var(--text-color);
+}
+
+/* navigation */
+nav {
+    height: var(--nav-height);
+    width: 100%;
+    box-shadow: var(--elevation-2);
+    z-index: 100;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--background);
+    padding: var(--gap-medium) var(--gap-large);
+}
+
+nav #nav-toggle {
+    display: none;
+}
+
+nav label[for="nav-toggle"] {
+    cursor: pointer;
+
+    @media only screen and (min-width: 1024px) {
+        display: none;
+    }
+}
+
+nav #nav-toggle+ul {
+    position: fixed;
+    right: 0;
+    top: 0;
+    bottom: var(--nav-height);
+    transform: translateX(100%);
+    background-color: var(--medium);
+    list-style: none;
+    transition: transform var(--transition-slow);
+
+    @media only screen and (min-width: 1024px) {
+        gap: var(--gap-medium);
+        position: unset;
+        right: unset;
+        top: unset;
+        bottom: unset;
+        display: flex;
+        transform: unset;
+        flex-wrap: wrap;
+    }
+}
+
+nav #nav-toggle+ul::before {
+    content: "";
+    width: 0%;
+    height: 100%;
+    position: absolute;
+    right: 100%;
+    top: 0%;
+    opacity: 0;
+    background-color: var(--text);
+    transition: opacity var(--transition-medium);
+
+    @media only screen and (min-width: 1024px) {
+        display: none;
+    }
+}
+
+nav #nav-toggle+ul a {
+    display: block;
+    padding: var(--gap-medium) var(--gap-large);
+
+    @media only screen and (min-width: 1024px) {
+        padding: unset;
+    }
+}
+
+nav #nav-toggle+ul a:active {
+    background-color: var(--primary);
+}
+
+nav #nav-toggle:checked+ul {
+    transform: translateX(0%);
+
+    @media only screen and (min-width: 1024px) {
+        transform: unset;
+    }
+}
+
+nav #nav-toggle:checked+ul::before {
+    width: 100vw;
+    opacity: 0.5;
+
+    @media only screen and (min-width: 1024px) {
+        width: 0%;
+    }
+}
+
+/* sementic sections */
+header,
+main,
+footer {
+    max-width: var(--max-width);
+    display: block;
+    padding: var(--space-small) var(--space-medium);
+    margin-left: auto;
+    margin-right: auto;
+}
+
+header {
+    margin-top: var(--nav-height);
+}
+
+*:has(>aside) {
+    gap: var(--gap-medium);
+    display: flex;
+    flex-direction: column;
+
+    @media only screen and (min-width: 1024px) {
+        flex-direction: row;
+    }
+}
+
+*:has(>aside) *:not(aside) {
+    order: 0;
+
+    @media only screen and (min-width: 1024px) {
+        order: 2;
+        flex-basis: 66.66%;
+        flex-grow: 1;
+        flex-shrink: 1;
+    }
+}
+
+aside {
+    border-radius: var(--border-radius-medium);
+    box-shadow: var(--elevation-1);
+    order: 1;
+    padding: var(--gap-medium);
+    background-color: var(--medium);
+
+    @media only screen and (min-width: 1024px) {
+        flex-basis: 33.33%;
+        flex-grow: 1;
+        flex-shrink: 1;
+    }
+}
+
+footer {
+    background-color: var(--background-color);
+}
+
+section {
+    padding: var(--space-small) 0;
+}
+
+article {}
+
+/* text */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-size: var(--font-size-large);
+    font-weight: 700;
+    line-height: 1em;
+    margin-bottom: 0.5em;
+}
+
+h1 {
+    font-size: var(--font-size-h1);
+}
+
+h2 {
+    font-size: var(--font-size-h2);
+}
+
+h3 {
+    font-size: var(--font-size-h3);
+}
+
+h4 {
+    font-size: var(--font-size-h4);
+}
+
+h5 {
+    font-size: var(--font-size-h5);
+}
+
+h6 {
+    font-size: var(--font-size-h6);
+}
+
+p {
+    font-size: var(--font-size-medium);
+    color: var(--text-color);
+    margin-bottom: var(--spacing-small);
+}
+
+/* images/videos */
+img,
+video {
+    box-shadow: var(--elevation-1);
+    border-radius: var(--border-radius-medium);
+    max-height: 100%;
+    max-width: 100%;
+    width: 100%;
+    height: auto;
+    margin-bottom: var(--spacing-small);
+}
+
+/* links */
+a {
+    color: var(--primary);
+    text-decoration: underline;
+    transition: var(--transition-fast);
+}
+
+a:hover,
+a:focus,
+a:active {
+    color: var(--primary-dark);
+    text-decoration: none;
+}
+
+/* buttons */
+button,
+input[type="submit"] {
+    border: none;
+    border-radius: var(--border-radius-medium);
+    box-shadow: var(--elevation-1);
+    cursor: pointer;
+    background-color: var(--primary);
+    color: var(--background);
+    padding: var(--gap-small) var(--gap-medium);
+    font-size: var(--font-size-medium);
+    transition: var(--transition-fast);
+}
+
+button:hover,
+input[type="submit"]:hover,
+button:focus,
+input[type="submit"]:focus,
+button:active,
+input[type="submit"]:active {
+    box-shadow: var(--elevation-2);
+    background-color: var(--primary-dark);
+}
