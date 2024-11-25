@@ -13,19 +13,27 @@
 <body>
     <header>
         <h1>H.264 NAL Unit Parser</h1>
-        <p>
-            This is a cute little NAL Unit Counter that displays the current
-            count of NAL Units succefully parsed by the NAL Unite parser I wrote.
-        </p>
-    </header>
-    <main>
-        <section>
+        <div>
             <aside>
-                <p>NAL Unit Count: <span id="nalCount">0</span></p>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>NAL Unit Type:</th>
+                            <th>Amount:</th>
+                        </tr>
+                    </thead>
+                    <tbody id="nal-unit-table">
+
+                    </tbody>
+                </table>
             </aside>
             <div>
                 <video id="webcam" autoplay muted></video>
             </div>
+        </div>
+    </header>
+    <main>
+        <section>
         </section>
     </main>
 </body>

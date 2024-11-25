@@ -11,47 +11,44 @@
 
 :root {
     /*  color components */
-    --primary-h: 200;
-    --primary-s: 85%;
-    --primary-l: 55%;
-    --primary-hsl: var(--primary-h), var(--primary-s), var(--primary-l);
-    --primary: hsl(var(--primary-hsl));
-    --primary-light: hsl(var(--primary-h), var(--primary-s), calc(var(--primary-l) / 0.75));
-    --primary-dark: hsl(var(--primary-h), var(--primary-s), calc(var(--primary-l) * 0.5));
-    --primary-darker: hsl(var(--primary-h), var(--primary-s), calc(var(--primary-l) * 0.25));
+    --color-primary-h: 200;
+    --color-primary-s: 85%;
+    --color-primary-l: 55%;
+    --color-primary-hsl: var(--color-primary-h), var(--color-primary-s), var(--color-primary-l);
+    --color-primary: hsl(var(--color-primary-hsl));
+    --color-primary-light: hsl(var(--color-primary-h), var(--color-primary-s), calc(var(--color-primary-l) / 0.75));
+    --color-primary-dark: hsl(var(--color-primary-h), var(--color-primary-s), calc(var(--color-primary-l) * 0.5));
+    --color-primary-darker: hsl(var(--color-primary-h), var(--color-primary-s), calc(var(--color-primary-l) * 0.25));
 
-    --secondary-h: 235;
-    --secondary-s: 65%;
-    --secondary-l: 35%;
-    --secondary-hsl: var(--secondary-h), var(--secondary-s), var(--secondary-l);
-    --secondary: hsl(var(--secondary-hsl));
-    --secondary-light: hsl(var(--secondary-h), var(--secondary-s), calc(var(--secondary-l) / 0.75));
-    --secondary-dark: hsl(var(--secondary-h), var(--secondary-s), calc(var(--secondary-l) * 0.5));
-    --secondary-darker: hsl(var(--secondary-h), var(--secondary-s), calc(var(--secondary-l) * 0.25));
+    --color-secondary-h: 235;
+    --color-secondary-s: 65%;
+    --color-secondary-l: 35%;
+    --color-secondary-hsl: var(--color-secondary-h), var(--color-secondary-s), var(--color-secondary-l);
+    --color-secondary: hsl(var(--color-secondary-hsl));
+    --color-secondary-light: hsl(var(--color-secondary-h), var(--color-secondary-s), calc(var(--color-secondary-l) / 0.75));
+    --color-secondary-dark: hsl(var(--color-secondary-h), var(--color-secondary-s), calc(var(--color-secondary-l) * 0.5));
+    --color-secondary-darker: hsl(var(--color-secondary-h), var(--color-secondary-s), calc(var(--color-secondary-l) * 0.25));
 
-    --medium-h: 0;
-    --medium-s: 0%;
-    --medium-l: 90%;
-    --medium-hsl: var(--medium-h),
-        var(--medium-s),
-        var(--medium-l);
-    --medium: hsl(var(--medium-hsl));
+    --color-medium-h: 0;
+    --color-medium-s: 0%;
+    --color-medium-l: 90%;
+    --color-medium-hsl: var(--color-medium-h), var(--color-medium-s), var(--color-medium-l);
+    --color-medium: hsl(var(--color-medium-hsl));
+    --color-medium-light: hsl(var(--color-medium-h), var(--color-medium-s), calc(var(--color-medium-l) / 0.95));
+    --color-medium-dark: hsl(var(--color-medium-h), var(--color-medium-s), calc(var(--color-medium-l) * 0.5));
 
-    --background-h: 0;
-    --background-s: 0%;
-    --background-l: 100%;
-    --background-hsl: var(--background-h),
-        var(--background-s),
-        var(--background-l);
-    --background: hsl(var(--background-hsl));
+    --color-background-h: 0;
+    --color-background-s: 0%;
+    --color-background-l: 100%;
+    --color-background-hsl: var(--color-background-h), var(--color-background-s), var(--color-background-l);
+    --color-background: hsl(var(--color-background-hsl));
 
-    --text-h: 0;
-    --text-s: 0%;
-    --text-l: 20%;
-    --text-hsl: var(--text-h),
-        var(--text-s),
-        var(--text-l);
-    --text: hsl(var(--text-hsl));
+    --color-text-h: 0;
+    --color-text-s: 0%;
+    --color-text-l: 20%;
+    --color-text-hsl: var(--color-text-h), var(--color-text-s), var(--color-text-l);
+    --color-text: hsl(var(--color-text-hsl));
+
 
     /* breakpoints */
     /* these don't work there just you can easily find and replace */
@@ -147,8 +144,8 @@ body {
     line-height: 1.5em;
     font-size: var(--base-font-size);
     font-weight: 200;
-    background-color: var(--background-color);
-    color: var(--text-color);
+    background-color: var(--color-background-color);
+    color: var(--color-text-color);
 }
 
 /* navigation */
@@ -164,7 +161,7 @@ nav {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background-color: var(--background);
+    background-color: var(--color-background);
     padding: var(--gap-medium) var(--gap-large);
 }
 
@@ -186,7 +183,7 @@ nav #nav-toggle+ul {
     top: 0;
     bottom: var(--nav-height);
     transform: translateX(100%);
-    background-color: var(--medium);
+    background-color: var(--color-medium);
     list-style: none;
     transition: transform var(--transition-slow);
 
@@ -210,7 +207,7 @@ nav #nav-toggle+ul::before {
     right: 100%;
     top: 0%;
     opacity: 0;
-    background-color: var(--text);
+    background-color: var(--color-text);
     transition: opacity var(--transition-medium);
 
     @media only screen and (min-width: 1024px) {
@@ -228,7 +225,7 @@ nav #nav-toggle+ul a {
 }
 
 nav #nav-toggle+ul a:active {
-    background-color: var(--primary);
+    background-color: var(--color-primary);
 }
 
 nav #nav-toggle:checked+ul {
@@ -266,6 +263,7 @@ header {
 *:has(>aside) {
     gap: var(--gap-medium);
     display: flex;
+    align-items: center;
     flex-direction: column;
 
     @media only screen and (min-width: 1024px) {
@@ -273,7 +271,7 @@ header {
     }
 }
 
-*:has(>aside) *:not(aside) {
+*:has(>aside)>*:not(aside) {
     order: 0;
 
     @media only screen and (min-width: 1024px) {
@@ -289,7 +287,7 @@ aside {
     box-shadow: var(--elevation-1);
     order: 1;
     padding: var(--gap-medium);
-    background-color: var(--medium);
+    background-color: var(--color-medium);
 
     @media only screen and (min-width: 1024px) {
         flex-basis: 33.33%;
@@ -299,7 +297,7 @@ aside {
 }
 
 footer {
-    background-color: var(--background-color);
+    background-color: var(--color-background-color);
 }
 
 section {
@@ -307,6 +305,30 @@ section {
 }
 
 article {}
+
+table {
+    width: 100%;
+    border-radius: var(--border-radius-small);
+    border-spacing: 0;
+    overflow: hidden;
+}
+
+table thead th {
+    font-weight: 700;
+    background-color: var(--color-medium);
+    padding: var(--gap-small);
+    text-align: left;
+}
+
+table tbody td {
+    font-weight: 200;
+    padding: var(--gap-small);
+}
+
+table tbody tr:nth-of-type(odd) {
+    background-color: var(--color-medium-light);
+}
+
 
 /* text */
 h1,
@@ -347,7 +369,7 @@ h6 {
 
 p {
     font-size: var(--font-size-medium);
-    color: var(--text-color);
+    color: var(--color-text);
     margin-bottom: var(--spacing-small);
 }
 
@@ -365,17 +387,22 @@ video {
 
 /* links */
 a {
-    color: var(--primary);
+    color: var(--color-primary);
     text-decoration: underline;
     transition: var(--transition-fast);
 }
 
 a:hover,
-a:focus,
-a:active {
-    color: var(--primary-dark);
+a:focus {
+    color: var(--color-primary-dark);
     text-decoration: none;
 }
+
+a:active {
+    color: var(--color-primary-light);
+    text-decoration: none;
+}
+
 
 /* buttons */
 button,
@@ -384,8 +411,8 @@ input[type="submit"] {
     border-radius: var(--border-radius-medium);
     box-shadow: var(--elevation-1);
     cursor: pointer;
-    background-color: var(--primary);
-    color: var(--background);
+    background-color: var(--color-primary);
+    color: var(--color-background);
     padding: var(--gap-small) var(--gap-medium);
     font-size: var(--font-size-medium);
     transition: var(--transition-fast);
@@ -394,9 +421,13 @@ input[type="submit"] {
 button:hover,
 input[type="submit"]:hover,
 button:focus,
-input[type="submit"]:focus,
+input[type="submit"]:focus {
+    box-shadow: var(--elevation-2);
+    background-color: var(--color-primary-dark);
+}
+
 button:active,
 input[type="submit"]:active {
     box-shadow: var(--elevation-2);
-    background-color: var(--primary-dark);
+    background-color: var(--color-primary-light)
 }

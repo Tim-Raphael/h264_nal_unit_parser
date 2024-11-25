@@ -1,67 +1,72 @@
-use std::collections::HashMap;
-use std::io::Write;
+use std::fmt;
+use std::io;
 
-#[derive(Debug, Hash, PartialEq, Eq, Clone)]
-pub enum NalUnitType {
-    Slice,
-    Sps,
-    Pps,
-    Other(u8),
-}
-
-pub struct NalUnitCount {
-    count: HashMap<NalUnitType, i32>,
-}
-
-impl NalUnitCount {
-    pub fn new() -> Self {
-        NalUnitCount {
-            count: HashMap::new(),
-        }
-    }
-
-    pub fn update(&mut self, nal_unit: &NalUnit) {
-        let key = nal_unit.to_type();
-        *self.count.entry(key).or_insert(0) += 1;
-    }
-
-    pub fn format(&self) -> String {
-        self.count
-            .clone()
-            .into_iter()
-            .map(|(key, count)| format!("{:?}: {}", key, count))
-            .collect::<Vec<_>>()
-            .join(", ")
-    }
-}
-
-#[derive(Debug)]
+#[allow(dead_code)]
 pub enum NalUnit {
-    Slice(Vec<u8>), // video data (I-frame, P-frame, B-frame slice)
-    Sps(Vec<u8>),   // sequence parameter set
-    Pps(Vec<u8>),   // picture parameter set
-    Other(u8, Vec<u8>),
+    Slice(Vec<u8>),     // video data (I-frame, P-frame, B-frame slice)
+    Sps(Vec<u8>),       // sequence parameter set
+    Pps(Vec<u8>),       // picture parameter set
+    Other(u8, Vec<u8>), // unspecified or unknown types
 }
 
-impl NalUnit {
-    pub fn to_type(&self) -> NalUnitType {
-        match self {
-            NalUnit::Slice(_) => NalUnitType::Slice,
-            NalUnit::Sps(_) => NalUnitType::Sps,
-            NalUnit::Pps(_) => NalUnitType::Pps,
-            NalUnit::Other(t, _) => NalUnitType::Other(*t),
-        }
+impl fmt::Display for NalUnit {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self {
+                NalUnit::Slice(_) => "Slice".to_string(),
+                NalUnit::Sps(_) => "SPS".to_string(),
+                NalUnit::Pps(_) => "PPS".to_string(),
+                NalUnit::Other(id, _) => format!("Other({})", id),
+            }
+        )
     }
 }
 
-struct NalUnitParser {
+#[derive(Default)]
+pub struct NalUnitParser {
     zero_byte_count: usize,
     byte_buf: Vec<u8>,
     nal_units: Vec<NalUnit>,
 }
 
+// impl Stream for NalUnitParser {
+//      type Item = NalUnit
+//
+// }
+
+impl io::Write for NalUnitParser {
+    fn write(&mut self, buf: &[u8]) -> io::Result<usize> {
+        for byte in buf {
+            self.byte_buf.push(*byte);
+
+            if byte == &0x00 {
+                self.zero_byte_count += 1;
+            } else if byte == &0x01 && self.zero_byte_count >= 2 {
+                let nal_unit = Self::parse(&self.byte_buf[..3]).unwrap();
+                self.nal_units.push(nal_unit);
+                self.zero_byte_count = 0;
+                self.byte_buf.clear();
+            } else {
+                self.zero_byte_count = 0;
+            }
+        }
+
+        Ok(buf.len())
+    }
+
+    fn flush(&mut self) -> io::Result<()> {
+        Ok(())
+    }
+}
+
 impl NalUnitParser {
-    fn parse(&mut self, bytes: &[u8]) -> Option<NalUnit> {
+    pub fn new() -> Self {
+        NalUnitParser::default()
+    }
+
+    fn parse(bytes: &[u8]) -> eyre::Result<NalUnit> {
         let header = &bytes[0];
 
         // a value of 1 indicates that the unit may contain bit errors or other syntax
@@ -69,132 +74,27 @@ impl NalUnitParser {
         let forbidden_zero_bit = (header & 0x80) >> 7;
 
         // a value of 00 indicates that the nal unit is not used to reconstructed a image frame
-        let _nal_ref_idc = (header & 0x60) >> 5;
+        let nal_ref_idc = (header & 0x60) >> 5;
         let nal_unit_type = header & 0x1F;
 
         if forbidden_zero_bit == 1 {
-            return None;
+            eyre::bail!("forbidden_zero_bit shall be equal to 0.");
+        }
+
+        if nal_ref_idc == 0 && nal_unit_type == 5 {
+            eyre::bail!(
+                "nal_ref_idc shall not be equal to 0 for NAL units with nal_unit_type equal to 5."
+            );
         }
 
         let nal_unit = match nal_unit_type {
-            1..=5 => NalUnit::Slice(bytes[1..].to_vec()),
-            7 => NalUnit::Sps(bytes[1..].to_vec()),
-            8 => NalUnit::Pps(bytes[1..].to_vec()),
-            _ => NalUnit::Other(nal_unit_type, bytes[1..].to_vec()),
+            0 => NalUnit::Other(0, bytes[1..].to_vec()), // Unspecified non-VCL
+            1..=5 => NalUnit::Slice(bytes[1..].to_vec()), // Slice
+            7 => NalUnit::Sps(bytes[1..].to_vec()),      // Sequence parameter set
+            8 => NalUnit::Pps(bytes[1..].to_vec()),      // Picture parameter set
+            _ => NalUnit::Other(nal_unit_type, bytes[1..].to_vec()), // Catch-all for unknown types
         };
 
-        Some(nal_unit)
+        eyre::Ok(nal_unit)
     }
-}
-
-impl Write for NalUnitParser {
-    fn write(&mut self, buf: &[u8]) -> std::io::Result<usize> {
-        for byte in buf {
-            self.byte_buf.push(*byte);
-
-            if byte == &0x00 {
-                self.zero_byte_count += 1;
-            } else if byte != &0x01 || self.zero_byte_count < 2 {
-                self.zero_byte_count = 0;
-            }
-
-            if byte == &0x01 && self.zero_byte_count >= 2 {
-                let nal_bytes = &self.byte_buf[..3].to_vec();
-
-                if let Some(nal_unit) = self.parse(nal_bytes) {
-                    self.nal_units.push(nal_unit);
-                }
-
-                self.byte_buf.clear();
-            }
-        }
-
-        Ok(buf.len())
-    }
-
-    fn flush(&mut self) -> std::io::Result<()> {
-        Ok(())
-    }
-}
-
-pub fn parse(buf: &[u8]) -> Vec<NalUnit> {
-    let mut nal_units = Vec::new();
-    let mut padding_bytes = 0;
-    let mut start_index: Option<usize> = None;
-
-    // struct NalUnitParser {
-    //      zero_byte_count: usize,
-    //      byte_buf: Vec<u8>,
-    //      nal_units: Vec<NalUnit>,
-    // }
-    //
-    // impl Write for NalUnitParser {
-    //      fn write(mut self, byte_slice: &[u8]) -> io::Result bla {
-    //          for byte in byte_slice {
-    //              self.byte_buf.push(byte);
-    //
-    //              // header detection logic
-    //              if byte == 0x00 {
-    //                  self.zero_byte_count += 1;
-    //              } else if byte != 0x01 || self.zero_byte_count < 2 {
-    //                  self.zero_byte_count = 0;
-    //              }
-    //
-    //              if byte == 0x01 && self.zero_byte_count == 2 {
-    //                  // this is my nal unit
-    //                  let nal_bytes = self.bytes_buf[..3].clone();
-    //                  self.nal_units.push( todo!() );
-    //                  self.bytes_buf.clear();
-    //              }
-    //          }
-    //      }
-    // }
-    //
-    // impl Stream for NalUnitParser {
-    //  type Item = NalUnit
-    //
-    // }
-
-    for i in 0..buf.len() {
-        if buf[i] == 0x00 {
-            padding_bytes += 1;
-            continue;
-        } else if buf[i] != 0x01 || padding_bytes < 2 {
-            padding_bytes = 0;
-            continue;
-        }
-
-        if let Some(start) = start_index {
-            let header = &buf[start];
-
-            // a value of 1 indicates that the unit may contain bit errors or other syntax
-            // violations
-            let forbidden_zero_bit = (header & 0x80) >> 7;
-
-            // a value of 00 indicates that the nal unit is not used to reconstructed a image frame
-            let _nal_ref_idc = (header & 0x60) >> 5;
-            let nal_unit_type = header & 0x1F;
-
-            if forbidden_zero_bit == 1 {
-                continue;
-            }
-
-            let nal_unit = match nal_unit_type {
-                1..=5 => NalUnit::Slice(buf[(start + 1)..(i - padding_bytes)].to_vec()),
-                7 => NalUnit::Sps(buf[(start + 1)..(i - padding_bytes)].to_vec()),
-                8 => NalUnit::Pps(buf[(start + 1)..(i - padding_bytes)].to_vec()),
-                _ => NalUnit::Other(
-                    nal_unit_type,
-                    buf[(start + 1)..(i - padding_bytes)].to_vec(),
-                ),
-            };
-
-            nal_units.push(nal_unit);
-        }
-
-        start_index = Some(i + 1);
-        padding_bytes = 0;
-    }
-
-    nal_units
 }

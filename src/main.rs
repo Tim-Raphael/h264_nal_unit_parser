@@ -1,4 +1,5 @@
-use futures::{SinkExt, StreamExt};
+use futures::{SinkExt, StreamExt, TryFutureExt};
+use std::io::Write;
 use tokio::sync::mpsc;
 use warp::ws::Message;
 use warp::Filter;
@@ -14,7 +15,6 @@ async fn main() {
 
     let routes = web_route.or(ws_route);
 
-    // Start the server
     warp::serve(routes).run(([127, 0, 0, 1], 8080)).await;
 }
 
@@ -25,40 +25,21 @@ async fn handle_connection(ws: warp::ws::WebSocket) {
     let (mut ws_tx, mut ws_rx) = ws.split();
     let (tx, mut rx) = mpsc::channel::<String>(32);
 
-    let mut nal_unit_count = nal_unit_parser::NalUnitCount::new();
+    let mut parser = nal_unit_parser::NalUnitParser::new();
 
-    // This spawns a task which allows us to send proccessed messages to the WebSocket.
     tokio::task::spawn(async move {
-        // while let Some(unit) = parser.next().await {
-        //      nal_unit_count.update(unit);
-        //      if ws_tx.send(Message::text(msg)).await.is_err() {
-        //          break;
-        //      }
-        // }
-        while let Some(msg) = rx.recv().await {
-            if ws_tx.send(Message::text(msg)).await.is_err() {
-                break;
-            }
+        while let Some(nal_unit_string) = rx.recv().await {
+            ws_tx
+                .send(Message::text(nal_unit_string))
+                .unwrap_or_else(|e| eprintln!("Error: {}", e))
+                .await
         }
     });
 
     while let Some(Ok(msg)) = ws_rx.next().await {
-        // let mut parser = parser.lock();
-        // parser.write_all(msg.as_bytes());
-        process_bytes(msg.as_bytes(), &mut nal_unit_count, &tx).await
-    }
-}
-
-async fn process_bytes(
-    bytes: &[u8],
-    nal_unit_count: &mut nal_unit_parser::NalUnitCount,
-    tx: &mpsc::Sender<String>,
-) {
-    for nal_unit in nal_unit_parser::parse(bytes) {
-        nal_unit_count.update(&nal_unit);
-
-        if (tx.send(nal_unit_count.format()).await).is_err() {
-            break;
+        let _ = parser.write(msg.as_bytes());
+        for nal_unit in nal_units {
+            (tx.send(nal_unit.to_string()).await).unwrap_or_else(|e| eprintln!("Error: {}", e));
         }
     }
 }

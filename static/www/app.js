@@ -1,5 +1,34 @@
+class NalUnitTable {
+    nalUnits = {};
+    element;
+
+    constructor(element) {
+        this.element = element;
+    }
+
+    render() {
+        const nalUnitsArray = Object.entries(this.nalUnits);
+        this.element.innerHTML = "";
+        for (let [key, value] of nalUnitsArray) {
+            this.element.innerHTML += `
+                <tr>
+                    <td>${key}</td>
+                    <td>${value}</td>
+                </tr>
+            `;
+        }
+    }
+
+    update(nalUnit) {
+        if (this.nalUnits[`${nalUnit} `]) this.nalUnits[`${nalUnit} `] += 1;
+        else this.nalUnits[`${nalUnit} `] = 1;
+        console.log(this.nalUnits);
+        this.render();
+    }
+}
+
 const video = document.getElementById("webcam");
-const nalCountDisplay = document.getElementById("nalCount");
+const table = new NalUnitTable(document.getElementById("nal-unit-table"));
 const ws = new WebSocket("ws://127.0.0.1:8080/ws");
 
 navigator.mediaDevices.getUserMedia({
@@ -12,7 +41,7 @@ navigator.mediaDevices.getUserMedia({
     .then((stream) => {
         video.srcObject = stream;
 
-        const mediaRecorder = new MediaRecorder(stream, {});
+        const mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=h264' });
         mediaRecorder.ondataavailable = (event) => {
             if (event.data.size > 0) {
                 ws.send(event.data);
@@ -23,6 +52,7 @@ navigator.mediaDevices.getUserMedia({
     .catch((err) => console.error("Error accessing webcam:", err));
 
 ws.onmessage = (event) => {
-    nalCountDisplay.textContent = event.data;
+    table.update(event.data)
 };
+
 
