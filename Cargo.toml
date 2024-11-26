@@ -4,8 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-eyre = "*" 
+eyre = "0.6.12" 
 tokio = { version = "1", features = ["full"] }
-tokio-stream = "0.1.16"
 futures = { version = "0.3.31", default-features = false }
 warp = "0.3.7"
